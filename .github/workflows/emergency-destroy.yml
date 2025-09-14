@@ -1,0 +1,124 @@
+name: Emergency Destroy All
+
+on:
+  workflow_dispatch:
+    inputs:
+      emergency_code:
+        description: 'Type "EMERGENCY-DESTROY-ALL" to destroy ALL environments'
+        required: true
+        type: string
+
+env:
+  AWS_REGION: ap-southeast-2
+
+jobs:
+  validate:
+    name: Validate Emergency Request
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Validate Emergency Code
+      run: |
+        if [ "${{ github.event.inputs.emergency_code }}" != "EMERGENCY-DESTROY-ALL" ]; then
+          echo "❌ Emergency code incorrect. You must type 'EMERGENCY-DESTROY-ALL' to proceed."
+          exit 1
+        fi
+        echo "⚠️ EMERGENCY DESTROY validated - ALL environments will be destroyed!"
+
+  destroy-dev:
+    name: Destroy Dev Environment
+    runs-on: ubuntu-latest
+    needs: validate
+    continue-on-error: true
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ env.AWS_REGION }}
+
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_version: 1.5.0
+
+    - name: Destroy Dev
+      run: |
+        cp environments/dev/backend.tf .
+        terraform init
+        terraform destroy -auto-approve -var-file="environments/dev/terraform.tfvars" || echo "Dev destroy completed with warnings"
+
+  destroy-staging:
+    name: Destroy Staging Environment
+    runs-on: ubuntu-latest
+    needs: validate
+    continue-on-error: true
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ env.AWS_REGION }}
+
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_version: 1.5.0
+
+    - name: Destroy Staging
+      run: |
+        cp environments/staging/backend.tf .
+        terraform init
+        terraform destroy -auto-approve -var-file="environments/staging/terraform.tfvars" || echo "Staging destroy completed with warnings"
+
+  destroy-production:
+    name: Destroy Production Environment
+    runs-on: ubuntu-latest
+    needs: validate
+    continue-on-error: true
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ env.AWS_REGION }}
+
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_version: 1.5.0
+
+    - name: Destroy Production
+      run: |
+        cp environments/production/backend.tf .
+        terraform init
+        terraform destroy -auto-approve -var-file="environments/production/terraform.tfvars" || echo "Production destroy completed with warnings"
+
+  cleanup-summary:
+    name: Cleanup Summary
+    runs-on: ubuntu-latest
+    needs: [destroy-dev, destroy-staging, destroy-production]
+    if: always()
+    
+    steps:
+    - name: Summary
+      run: |
+        echo "🚨 EMERGENCY DESTROY COMPLETED"
+        echo "📊 All environments destruction attempted"
+        echo "⚠️ Check individual job logs for any errors"
+        echo "💰 AWS costs should now be minimal"
