@@ -1,262 +1,379 @@
-# AWS ECS Infrastructure for Bagisto E-commerce
+# Bagisto ECS Infrastructure - Terraform
 
-## 🚀 Overview
-Complete AWS infrastructure for deploying Bagisto e-commerce application using ECS Fargate, Aurora MySQL, and optional S3/CloudFront for media storage.
+[![Terraform](https://img.shields.io/badge/Terraform-1.5+-purple)](https://terraform.io)
+[![AWS](https://img.shields.io/badge/AWS-ECS%20%7C%20RDS%20%7C%20S3-orange)](https://aws.amazon.com)
+[![Infrastructure](https://img.shields.io/badge/Infrastructure-as%20Code-blue)](https://www.terraform.io/use-cases/infrastructure-as-code)
 
-**📅 Last Updated:** 2025-01-14 07:59 UTC  
-**🔄 Status:** Active Development  
-**✅ Pipeline:** Automated Deployment Ready
+Production-ready Terraform infrastructure for deploying Bagisto e-commerce platform on AWS ECS with microservices architecture, auto-scaling, and multi-environment support.
 
-## 🏗️ Architecture
+## 🏗️ Infrastructure Architecture
+
 ```
-Internet → ALB → ECS Fargate → Aurora MySQL
-                    ↓
-              S3 + CloudFront (Optional)
+┌─────────────────────────────────────────────────────────────────┐
+│                          AWS Cloud                              │
+│  ┌─────────────────────────────────────────────────────────────┐│
+│  │                    VPC (10.x.0.0/16)                       ││
+│  │                                                             ││
+│  │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐     ││
+│  │  │Public Subnet │  │Public Subnet │  │Public Subnet │     ││
+│  │  │    AZ-1a     │  │    AZ-1b     │  │    AZ-1c     │     ││
+│  │  │     ALB      │  │     NAT      │  │   Reserved   │     ││
+│  │  └──────────────┘  └──────────────┘  └──────────────┘     ││
+│  │                                                             ││
+│  │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐     ││
+│  │  │Private Subnet│  │Private Subnet│  │Private Subnet│     ││
+│  │  │    AZ-1a     │  │    AZ-1b     │  │    AZ-1c     │     ││
+│  │  │ ECS Services │  │ ECS Services │  │ RDS Cluster  │     ││
+│  │  └──────────────┘  └──────────────┘  └──────────────┘     ││
+│  └─────────────────────────────────────────────────────────────┘│
+└─────────────────────────────────────────────────────────────────┘
 ```
-
-## 📊 Current Deployment Status
-
-### **Active Environments:**
-- ✅ **Development**: `bagisto-dev-alb-*.ap-southeast-2.elb.amazonaws.com`
-- 🔄 **Staging**: Ready for deployment
-- 🚀 **Production**: Ready for deployment
-
-### **Infrastructure Health:**
-- ✅ **ECS Fargate**: Running and healthy
-- ✅ **Aurora MySQL**: Database operational
-- ✅ **Application Load Balancer**: Traffic routing active
-- ✅ **VPC & Security Groups**: Network secured
-- ✅ **Secrets Manager**: Credentials managed
-
-### **Recent Updates:**
-- 🔧 Fixed ECS capacity provider destruction issues
-- 🗑️ Added comprehensive destroy workflows
-- 📚 Enhanced documentation and troubleshooting guides
-- ⚡ Optimized deployment pipelines
 
 ## 📁 Project Structure
+
 ```
-ECS-Terraform-INFRA/
-├── .github/workflows/           # GitHub Actions workflows
-│   ├── deploy-dev.yml          # Deploy dev environment
-│   ├── deploy-staging.yml      # Deploy staging environment  
-│   ├── deploy-production.yml   # Deploy production environment
-│   ├── destroy-environment.yml # Destroy specific environment
-│   └── emergency-destroy.yml   # Destroy all environments
-├── environments/               # Environment-specific configurations
+ECS-Terrfaorm-INFRA/
+├── environments/
 │   ├── dev/
-│   │   ├── backend.tf         # Terraform backend for dev
-│   │   └── terraform.tfvars   # Dev environment variables
+│   │   ├── terraform.tfvars    # Development configuration
+│   │   └── backend.tf          # Dev state backend
 │   ├── staging/
-│   │   ├── backend.tf         # Terraform backend for staging
-│   │   └── terraform.tfvars   # Staging environment variables
+│   │   ├── terraform.tfvars    # Staging configuration
+│   │   └── backend.tf          # Staging state backend
 │   └── production/
-│       ├── backend.tf         # Terraform backend for production
-│       └── terraform.tfvars   # Production environment variables
-├── alb.tf                     # Application Load Balancer
-├── cloudfront.tf              # CloudFront distribution (optional)
-├── ecs.tf                     # ECS cluster, service, and tasks
-├── iam.tf                     # IAM roles and policies
-├── locals.tf                  # Local values and tags
-├── outputs.tf                 # Terraform outputs
-├── provider.tf                # AWS provider configuration
-├── rds.tf                     # Aurora MySQL cluster
-├── s3.tf                      # S3 bucket for media (optional)
-├── security_groups.tf         # Security group rules
-├── variables.tf               # Input variables
-├── vpc.tf                     # VPC and networking
-└── README.md                  # This file
+│       ├── terraform.tfvars    # Production configuration
+│       └── backend.tf          # Production state backend
+├── .github/workflows/
+│   ├── deploy-dev.yml          # Dev deployment pipeline
+│   ├── deploy-staging.yml      # Staging deployment pipeline
+│   ├── deploy-production.yml   # Production deployment pipeline
+│   └── destroy-environment.yml # Environment cleanup
+├── main.tf                     # Provider configuration
+├── vpc.tf                      # VPC, subnets, gateways
+├── security-groups.tf          # Security group rules
+├── alb.tf                      # Application Load Balancer
+├── ecs.tf                      # Web server ECS service
+├── queue-worker.tf             # Queue worker ECS service
+├── scheduler.tf                # Scheduler ECS service
+├── rds.tf                      # MySQL database cluster
+├── s3.tf                       # Media files storage
+├── cloudfront.tf               # CDN distribution
+├── iam.tf                      # IAM roles and policies
+├── outputs.tf                  # Infrastructure outputs
+├── variables.tf                # Input variables
+└── README.md                   # This documentation
 ```
 
-## 🛠️ Infrastructure Components
+## 🚀 Quick Start
 
-### Core Services
-- **VPC**: Custom VPC with public/private subnets
-- **ECS Fargate**: Serverless container platform
-- **Aurora MySQL**: Managed database cluster
-- **Application Load Balancer**: Traffic distribution
-- **Secrets Manager**: Secure credential storage
+### **Prerequisites**
+- AWS CLI configured with appropriate permissions
+- Terraform 1.5+ installed
+- GitHub repository access for CI/CD
 
-### Optional Services (Currently Disabled)
-- **S3 Bucket**: Media file storage
-- **CloudFront**: Global CDN for media delivery
+### **Manual Deployment**
 
-### Security
-- **Security Groups**: Network access control
-- **IAM Roles**: Least privilege access
-- **Private Subnets**: Database isolation
-- **Secrets Management**: Encrypted credential storage
+1. **Clone Repository**
+   ```bash
+   git clone https://github.com/vishwanathacharya/ECS-Terrfaorm-INFRA.git
+   cd ECS-Terrfaorm-INFRA
+   ```
 
-## 🌍 Environments
+2. **Initialize Terraform**
+   ```bash
+   # Copy environment-specific backend configuration
+   cp environments/staging/backend.tf .
+   
+   # Initialize Terraform
+   terraform init
+   ```
 
-### Development
-- **VPC CIDR**: `10.0.0.0/16`
-- **Instance Class**: `db.r5.large`
-- **ECS Capacity**: Fargate Spot
-- **Desired Count**: 1 task
+3. **Plan Deployment**
+   ```bash
+   # Review infrastructure changes
+   terraform plan -var-file="environments/staging/terraform.tfvars"
+   ```
 
-### Staging  
-- **VPC CIDR**: `10.1.0.0/16`
-- **Instance Class**: `db.r5.large`
-- **ECS Capacity**: Fargate Spot
-- **Desired Count**: 1 task
+4. **Deploy Infrastructure**
+   ```bash
+   # Apply infrastructure changes
+   terraform apply -var-file="environments/staging/terraform.tfvars"
+   ```
 
-### Production
-- **VPC CIDR**: `10.2.0.0/16`
-- **Instance Class**: `db.r5.large`
-- **ECS Capacity**: Fargate On-Demand
-- **Desired Count**: 1 task
+### **Automated Deployment (Recommended)**
 
-## 🚀 Deployment Workflows
+Push to respective branches to trigger automated deployment:
 
-### 1. Environment-Specific Deployment
-**Triggers**: 
-- Push to `main` branch (dev environment)
-- Push to `staging` branch (staging environment)
-- Push to `production` branch (production environment)
-- Manual dispatch
-
-**Steps**:
-1. Terraform initialization
-2. Infrastructure planning
-3. Resource deployment
-4. Output generation
-
-### 2. Selective Environment Destruction
-**Trigger**: Manual dispatch only
-**Safety**: Requires typing "DESTROY"
-**Options**: Choose dev, staging, or production
-**Action**: Destroys selected environment only
-
-### 3. Emergency Destroy All
-**Trigger**: Manual dispatch only
-**Safety**: Requires typing "EMERGENCY-DESTROY-ALL"
-**Action**: Destroys ALL environments simultaneously
-
-## 📋 Prerequisites
-- AWS Account with appropriate permissions
-- GitHub repository secrets configured:
-  - `AWS_ACCESS_KEY_ID`
-  - `AWS_SECRET_ACCESS_KEY`
-- S3 buckets for Terraform state (per environment)
-- ECR repository with Bagisto application image
-
-## 🔧 Local Development
-
-### Initialize Terraform
 ```bash
-# Copy environment backend
-cp environments/dev/backend.tf .
+# Deploy to development
+git push origin dev
 
-# Initialize
-terraform init
+# Deploy to staging  
+git push origin staging
 
-# Plan deployment
-terraform plan -var-file="environments/dev/terraform.tfvars"
-
-# Apply changes
-terraform apply -var-file="environments/dev/terraform.tfvars"
+# Deploy to production
+git push origin production
 ```
 
-### Environment Variables
-Each environment requires:
+## 🌍 Environment Configurations
+
+### **Development Environment**
 ```hcl
 environment = "dev"
-project_name = "bagisto"
 vpc_cidr = "10.0.0.0/16"
-ecr_repository_url = "556612399991.dkr.ecr.ap-southeast-2.amazonaws.com/bagisto-app"
-image_tag = "latest"
+ecs_capacity_provider = "FARGATE_SPOT"  # 70% cost savings
+ecs_desired_count = 1
+db_instance_class = "db.r5.large"
+```
+
+### **Staging Environment**
+```hcl
+environment = "staging"
+vpc_cidr = "10.1.0.0/16"
 ecs_capacity_provider = "FARGATE_SPOT"
 ecs_desired_count = 1
 db_instance_class = "db.r5.large"
 ```
 
-## 🌐 Access URLs
-After deployment:
-- **Dev**: `http://bagisto-dev-alb-*.ap-southeast-2.elb.amazonaws.com/`
-- **Staging**: `http://bagisto-staging-alb-*.ap-southeast-2.elb.amazonaws.com/`
-- **Production**: `http://bagisto-production-alb-*.ap-southeast-2.elb.amazonaws.com/`
-
-## 📊 Resource Outputs
-```bash
-# Get ALB endpoint
-terraform output alb_dns_name
-
-# Get database endpoint
-terraform output rds_cluster_endpoint
-
-# Get ECS cluster name
-terraform output ecs_cluster_name
+### **Production Environment**
+```hcl
+environment = "production"
+vpc_cidr = "10.2.0.0/16"
+ecs_capacity_provider = "FARGATE"        # High availability
+ecs_desired_count = 2
+db_instance_class = "db.r5.xlarge"
 ```
 
-## 🗑️ Cleanup Options
+## 🏗️ Infrastructure Components
 
-### Destroy Specific Environment
-1. Go to GitHub Actions
-2. Run "Destroy Environment" workflow
-3. Select environment (dev/staging/production)
-4. Type "DESTROY" when prompted
+### **Networking (vpc.tf)**
+- **VPC:** Isolated network environment
+- **Subnets:** Public (ALB, NAT) + Private (ECS, RDS)
+- **Gateways:** Internet Gateway + NAT Gateway
+- **Route Tables:** Public and private routing
 
-### Emergency Destroy All
-1. Go to GitHub Actions
-2. Run "Emergency Destroy All" workflow
-3. Type "EMERGENCY-DESTROY-ALL" when prompted
-4. All environments will be destroyed
+### **Security (security-groups.tf)**
+- **ALB Security Group:** HTTP/HTTPS from internet
+- **ECS Security Group:** Traffic from ALB only
+- **RDS Security Group:** MySQL from ECS only
 
-## 💰 Cost Optimization
-- **Fargate Spot**: 70% cost savings for dev/staging
-- **Aurora Serverless**: Pay-per-use database scaling
-- **Lifecycle Policies**: Automatic resource cleanup
-- **Environment Isolation**: Deploy only needed environments
+### **Load Balancing (alb.tf)**
+- **Application Load Balancer:** Layer 7 load balancing
+- **Target Groups:** Health check configuration
+- **Listeners:** HTTP to HTTPS redirect
+
+### **Compute Services**
+
+#### **Web Server (ecs.tf)**
+- **Service Type:** ECS Fargate
+- **Container:** nginx + php-fpm
+- **Scaling:** 1-5 containers based on CPU
+- **Health Check:** HTTP endpoint monitoring
+
+#### **Queue Workers (queue-worker.tf)**
+- **Service Type:** ECS Fargate
+- **Container:** Laravel queue worker
+- **Scaling:** 1-10 containers based on queue depth
+- **Command:** `php artisan queue:work`
+
+#### **Scheduler (scheduler.tf)**
+- **Service Type:** ECS Fargate
+- **Container:** Laravel task scheduler
+- **Scaling:** Fixed 1 container
+- **Command:** `php artisan schedule:run`
+
+### **Database (rds.tf)**
+- **Engine:** MySQL 8.0
+- **Configuration:** Aurora Serverless v2 cluster
+- **Availability:** Multi-AZ with automatic failover
+- **Backup:** Automated daily backups (7-30 days retention)
+- **Security:** Encrypted at rest and in transit
+
+### **Storage & CDN**
+
+#### **S3 Storage (s3.tf)**
+- **Bucket:** Media files storage
+- **Versioning:** Enabled for production
+- **Lifecycle:** Standard → IA (30d) → Glacier (90d)
+- **CORS:** Cross-origin resource sharing enabled
+
+#### **CloudFront CDN (cloudfront.tf)**
+- **Distribution:** Global content delivery
+- **Caching:** Optimized for images (1 day TTL)
+- **Compression:** Automatic gzip compression
+- **Security:** HTTPS enforcement
+
+### **Security & Access (iam.tf)**
+- **ECS Execution Role:** Container startup permissions
+- **ECS Task Role:** Application runtime permissions
+- **S3 Access Policy:** Media files read/write
+- **Secrets Manager:** Database credentials access
+
+## 📊 Monitoring & Outputs
+
+### **Infrastructure Outputs**
+```hcl
+# Network Information
+vpc_id                    # VPC identifier
+alb_dns_name             # Load balancer endpoint
+
+# ECS Information  
+ecs_cluster_name         # ECS cluster name
+ecs_service_name         # Web service name
+
+# Database Information
+rds_cluster_endpoint     # Database writer endpoint
+rds_cluster_reader_endpoint  # Database reader endpoint
+
+# Storage Information
+s3_bucket_name           # Media files bucket
+cloudfront_domain_name   # CDN distribution domain
+```
+
+### **CloudWatch Monitoring**
+- **ECS Services:** CPU, memory, task count metrics
+- **ALB:** Request count, latency, error rates
+- **RDS:** Database connections, CPU, storage
+- **S3:** Request metrics, storage utilization
 
 ## 🔒 Security Best Practices
-- Private subnets for database
-- Security groups with minimal access
-- IAM roles with least privilege
-- Secrets Manager for credentials
-- VPC isolation between environments
 
-## 🆘 Troubleshooting
+### **Network Security**
+- **Private Subnets:** Application containers isolated from internet
+- **Security Groups:** Restrictive ingress/egress rules
+- **NACLs:** Additional network-level protection
 
-### Common Issues
-1. **ECR Image Not Found**: Deploy ECR repository first
-2. **Database Connection**: Check security groups
-3. **Task Failures**: Verify environment variables
-4. **Permission Denied**: Check IAM roles
+### **Data Security**
+- **Encryption at Rest:** RDS, S3, EBS volumes
+- **Encryption in Transit:** HTTPS, SSL/TLS
+- **Secrets Management:** AWS Secrets Manager integration
 
-### Debug Commands
-```bash
-# Check ECS service status
-aws ecs describe-services --cluster bagisto-dev-cluster --services bagisto-dev-service
+### **Access Control**
+- **IAM Roles:** Least privilege principle
+- **Resource Policies:** Fine-grained access control
+- **VPC Endpoints:** Private AWS service access
 
-# Check task logs
-aws logs get-log-events --log-group-name /ecs/bagisto-dev-task
+## 💰 Cost Optimization
 
-# Check database connectivity
-aws rds describe-db-clusters --db-cluster-identifier bagisto-dev-aurora-cluster
-```
+### **Compute Optimization**
+- **Fargate Spot:** 70% savings for non-production
+- **Right-sizing:** Optimized CPU/memory allocation
+- **Auto-scaling:** Scale down during low usage
 
-## 📚 Related Repositories
-- **Application Code**: [Bagisto Repository](../bagisto) - Application source code and ECR deployment
-- **Infrastructure**: This repository - Complete AWS infrastructure
+### **Storage Optimization**
+- **S3 Lifecycle:** Automatic tier transitions
+- **CloudFront:** Reduced origin requests
+- **RDS:** Aurora Serverless v2 scaling
+
+### **Monitoring Costs**
+- **AWS Cost Explorer:** Track spending by service
+- **Budgets:** Set spending alerts
+- **Resource Tagging:** Cost allocation tracking
 
 ## 🔄 CI/CD Pipeline
-1. **Code Push** → Bagisto repository
-2. **Image Build** → ECR repository update
-3. **ECS Update** → Automatic service deployment
-4. **Health Check** → ALB health verification
-5. **Traffic Switch** → Zero-downtime deployment
 
-## 📈 Monitoring & Logging
-- **CloudWatch Logs**: ECS task logs
-- **ALB Access Logs**: Request tracking
-- **CloudWatch Metrics**: Performance monitoring
-- **Health Checks**: Application availability
+### **GitHub Actions Workflows**
 
-## 🎯 Future Enhancements
-- [ ] Auto Scaling based on CPU/Memory
-- [ ] Custom domain with Route 53
-- [ ] SSL/TLS certificates with ACM
-- [ ] WAF for security protection
-- [ ] ElastiCache for session storage
-- [ ] RDS Read Replicas for scaling
+#### **Development Pipeline**
+```yaml
+# Triggered on: push to dev branch
+# Target: Development environment
+# Compute: Fargate Spot
+# Database: Single instance
+```
+
+#### **Staging Pipeline**
+```yaml
+# Triggered on: push to staging branch  
+# Target: Staging environment
+# Compute: Fargate Spot
+# Database: Cluster with reader
+```
+
+#### **Production Pipeline**
+```yaml
+# Triggered on: push to production branch
+# Target: Production environment
+# Compute: Fargate (high availability)
+# Database: Multi-AZ cluster
+```
+
+### **Deployment Process**
+1. **Terraform Plan:** Review infrastructure changes
+2. **Terraform Apply:** Deploy infrastructure updates
+3. **ECS Service Update:** Force new deployment
+4. **Health Check:** Verify service availability
+
+## 🛠️ Maintenance & Operations
+
+### **Regular Maintenance**
+- **Terraform State:** Backed up to S3 with versioning
+- **Infrastructure Updates:** Monthly Terraform version updates
+- **Security Patches:** Automated OS updates via ECS
+- **Cost Review:** Monthly cost optimization analysis
+
+### **Disaster Recovery**
+- **Multi-AZ:** Automatic failover capability
+- **Backups:** Daily automated database backups
+- **Infrastructure:** Reproducible via Terraform
+- **Recovery Time:** < 15 minutes for most scenarios
+
+### **Scaling Operations**
+```bash
+# Scale ECS services
+aws ecs update-service --cluster bagisto-prod-cluster \
+  --service bagisto-prod-service --desired-count 5
+
+# Scale database
+aws rds modify-db-cluster --db-cluster-identifier bagisto-prod \
+  --scaling-configuration MinCapacity=2,MaxCapacity=16
+```
+
+## 🔧 Troubleshooting
+
+### **Common Issues**
+
+#### **ECS Service Won't Start**
+```bash
+# Check service events
+aws ecs describe-services --cluster CLUSTER_NAME --services SERVICE_NAME
+
+# Check task definition
+aws ecs describe-task-definition --task-definition TASK_DEFINITION_ARN
+```
+
+#### **Database Connection Issues**
+```bash
+# Check security groups
+aws ec2 describe-security-groups --group-ids sg-xxxxx
+
+# Test connectivity from ECS
+aws ecs execute-command --cluster CLUSTER --task TASK_ID --command "nc -zv DB_HOST 3306"
+```
+
+#### **S3 Access Issues**
+```bash
+# Check IAM permissions
+aws iam simulate-principal-policy --policy-source-arn ROLE_ARN \
+  --action-names s3:GetObject --resource-arns BUCKET_ARN/*
+```
+
+## 📞 Support & Documentation
+
+### **AWS Documentation**
+- [ECS Best Practices](https://docs.aws.amazon.com/AmazonECS/latest/bestpracticesguide/)
+- [RDS Aurora Guide](https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/)
+- [CloudFront Documentation](https://docs.aws.amazon.com/cloudfront/)
+
+### **Terraform Resources**
+- [AWS Provider Documentation](https://registry.terraform.io/providers/hashicorp/aws/latest/docs)
+- [Terraform Best Practices](https://www.terraform.io/docs/cloud/guides/recommended-practices/)
+
+### **Application Repository**
+[Bagisto ECS Application](https://github.com/vishwanathacharya/ECS-BagistoV2.2.2)
+
+---
+
+**Infrastructure as Code with ❤️ using Terraform and AWS**
+
+*Last Updated: September 2025*
