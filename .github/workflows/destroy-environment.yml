@@ -67,6 +67,9 @@ jobs:
 
     - name: Terraform Destroy
       run: |
+        # Remove problematic capacity provider from state if it exists
+        terraform state rm aws_ecs_cluster_capacity_providers.main 2>/dev/null || echo "Capacity provider not in state"
+        
         terraform destroy -auto-approve -var-file="environments/${{ github.event.inputs.environment }}/terraform.tfvars"
 
     - name: Cleanup Confirmation

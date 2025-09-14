@@ -51,6 +51,8 @@ jobs:
       run: |
         cp environments/dev/backend.tf .
         terraform init
+        # Remove problematic capacity provider from state if it exists
+        terraform state rm aws_ecs_cluster_capacity_providers.main 2>/dev/null || echo "Capacity provider not in state"
         terraform destroy -auto-approve -var-file="environments/dev/terraform.tfvars" || echo "Dev destroy completed with warnings"
 
   destroy-staging:
@@ -79,6 +81,8 @@ jobs:
       run: |
         cp environments/staging/backend.tf .
         terraform init
+        # Remove problematic capacity provider from state if it exists
+        terraform state rm aws_ecs_cluster_capacity_providers.main 2>/dev/null || echo "Capacity provider not in state"
         terraform destroy -auto-approve -var-file="environments/staging/terraform.tfvars" || echo "Staging destroy completed with warnings"
 
   destroy-production:
@@ -107,6 +111,8 @@ jobs:
       run: |
         cp environments/production/backend.tf .
         terraform init
+        # Remove problematic capacity provider from state if it exists
+        terraform state rm aws_ecs_cluster_capacity_providers.main 2>/dev/null || echo "Capacity provider not in state"
         terraform destroy -auto-approve -var-file="environments/production/terraform.tfvars" || echo "Production destroy completed with warnings"
 
   cleanup-summary:
