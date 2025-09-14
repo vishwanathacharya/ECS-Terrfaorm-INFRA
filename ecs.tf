@@ -1,9 +1,3 @@
-# Data source to get latest ECR image
-data "aws_ecr_image" "latest" {
-  repository_name = "bagisto-app"
-  image_tag       = "latest"
-}
-
 # ECS Cluster
 resource "aws_ecs_cluster" "main" {
   name = "${local.name_prefix}-cluster"
@@ -115,14 +109,13 @@ resource "aws_ecs_task_definition" "app" {
 resource "aws_ecs_service" "app" {
   name            = "${local.name_prefix}-service"
   cluster         = aws_ecs_cluster.main.id
-  task_definition = "${aws_ecs_task_definition.app.family}:${max(aws_ecs_task_definition.app.revision, data.aws_ecs_task_definition.app.revision)}"
+  task_definition = aws_ecs_task_definition.app.arn
   desired_count   = var.ecs_desired_count
   launch_type     = "FARGATE"
 
-  # Enable automatic deployments
+  # Enable rolling deployments
   deployment_maximum_percent         = 200
   deployment_minimum_healthy_percent = 50
-  force_new_deployment              = true
 
   network_configuration {
     security_groups  = [aws_security_group.ecs.id]
@@ -138,15 +131,14 @@ resource "aws_ecs_service" "app" {
 
   depends_on = [aws_lb_listener.app]
 
+  # Ignore task definition changes - let GitHub Actions handle updates
+  lifecycle {
+    ignore_changes = [task_definition]
+  }
+
   tags = merge(local.common_tags, {
     Name = "${local.name_prefix}-service"
   })
-}
-
-# Data source to get current task definition
-data "aws_ecs_task_definition" "app" {
-  task_definition = aws_ecs_task_definition.app.family
-  depends_on      = [aws_ecs_task_definition.app]
 }
 
 # CloudWatch Log Group
