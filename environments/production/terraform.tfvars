@@ -10,7 +10,7 @@ image_tag = "latest"
 
 # ECS Configuration
 ecs_capacity_provider = "FARGATE"
-ecs_desired_count = 3
+ecs_desired_count = 1
 
 # RDS Configuration
-db_instance_class = "db.r6g.xlarge"
+db_instance_class = "db.t3.micro"
