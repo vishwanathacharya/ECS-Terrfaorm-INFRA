@@ -23,55 +23,8 @@ resource "aws_iam_role_policy_attachment" "ecs_execution_role_policy" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }
 
-# ECS Task Role Policy for S3 Access
-resource "aws_iam_role_policy" "ecs_task_s3_policy" {
-  name = "${local.name_prefix}-ecs-task-s3-policy"
-  role = aws_iam_role.ecs_task_role.id
-
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Effect = "Allow"
-        Action = [
-          "s3:GetObject",
-          "s3:PutObject",
-          "s3:DeleteObject",
-          "s3:ListBucket"
-        ]
-        Resource = [
-          aws_s3_bucket.media_files.arn,
-          "${aws_s3_bucket.media_files.arn}/*"
-        ]
-      }
-    ]
-  })
-}
-
-# ECS Task Role Policy for S3 Access
-resource "aws_iam_role_policy" "ecs_task_s3_policy" {
-  name = "${local.name_prefix}-ecs-task-s3-policy"
-  role = aws_iam_role.ecs_task_role.id
-
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Effect = "Allow"
-        Action = [
-          "s3:GetObject",
-          "s3:PutObject",
-          "s3:DeleteObject",
-          "s3:ListBucket"
-        ]
-        Resource = [
-          aws_s3_bucket.media_files.arn,
-          "${aws_s3_bucket.media_files.arn}/*"
-        ]
-      }
-    ]
-  })
-}
+# ECS Task Role
+resource "aws_iam_role" "ecs_task_role" {
   name = "${local.name_prefix}-ecs-task-role"
 
   assume_role_policy = jsonencode({
@@ -90,38 +43,30 @@ resource "aws_iam_role_policy" "ecs_task_s3_policy" {
   tags = local.common_tags
 }
 
-# Temporarily disabled S3 policy for testing
-# resource "aws_iam_policy" "s3_media_policy" {
-#   name        = "${local.name_prefix}-s3-media-policy"
-#   description = "Policy to access S3 media files bucket"
+# ECS Task Role Policy for S3 Access
+resource "aws_iam_role_policy" "ecs_task_s3_policy" {
+  name = "${local.name_prefix}-ecs-task-s3-policy"
+  role = aws_iam_role.ecs_task_role.id
 
-#   policy = jsonencode({
-#     Version = "2012-10-17"
-#     Statement = [
-#       {
-#         Effect = "Allow"
-#         Action = [
-#           "s3:GetObject",
-#           "s3:PutObject",
-#           "s3:DeleteObject",
-#           "s3:ListBucket"
-#         ]
-#         Resource = [
-#           aws_s3_bucket.media_files.arn,
-#           "${aws_s3_bucket.media_files.arn}/*"
-#         ]
-#       }
-#     ]
-#   })
-
-#   tags = local.common_tags
-# }
-
-# Temporarily disabled S3 policy for testing
-# resource "aws_iam_role_policy_attachment" "ecs_task_s3_policy" {
-#   role       = aws_iam_role.ecs_task_role.name
-#   policy_arn = aws_iam_policy.s3_media_policy.arn
-# }
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "s3:GetObject",
+          "s3:PutObject",
+          "s3:DeleteObject",
+          "s3:ListBucket"
+        ]
+        Resource = [
+          aws_s3_bucket.media_files.arn,
+          "${aws_s3_bucket.media_files.arn}/*"
+        ]
+      }
+    ]
+  })
+}
 
 # Secrets Manager Policy for ECS Task
 resource "aws_iam_policy" "secrets_manager_policy" {
