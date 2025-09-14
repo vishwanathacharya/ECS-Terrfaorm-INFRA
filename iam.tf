@@ -43,6 +43,39 @@ resource "aws_iam_role" "ecs_task_role" {
   tags = local.common_tags
 }
 
+# S3 Media Files Policy for ECS Task
+resource "aws_iam_policy" "s3_media_policy" {
+  name        = "${local.name_prefix}-s3-media-policy"
+  description = "Policy to access S3 media files bucket"
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "s3:GetObject",
+          "s3:PutObject",
+          "s3:DeleteObject",
+          "s3:ListBucket"
+        ]
+        Resource = [
+          aws_s3_bucket.media_files.arn,
+          "${aws_s3_bucket.media_files.arn}/*"
+        ]
+      }
+    ]
+  })
+
+  tags = local.common_tags
+}
+
+# Attach S3 policy to ECS task role
+resource "aws_iam_role_policy_attachment" "ecs_task_s3_policy" {
+  role       = aws_iam_role.ecs_task_role.name
+  policy_arn = aws_iam_policy.s3_media_policy.arn
+}
+
 # Secrets Manager Policy for ECS Task
 resource "aws_iam_policy" "secrets_manager_policy" {
   name        = "${local.name_prefix}-secrets-manager-policy"

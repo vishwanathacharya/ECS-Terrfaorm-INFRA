@@ -55,6 +55,22 @@ resource "aws_ecs_task_definition" "app" {
         {
           name  = "APP_URL"
           value = "http://${aws_lb.main.dns_name}"
+        },
+        {
+          name  = "AWS_BUCKET"
+          value = aws_s3_bucket.media_files.bucket
+        },
+        {
+          name  = "AWS_DEFAULT_REGION"
+          value = "ap-southeast-2"
+        },
+        {
+          name  = "CLOUDFRONT_URL"
+          value = "https://${aws_cloudfront_distribution.media_files.domain_name}"
+        },
+        {
+          name  = "FILESYSTEM_DISK"
+          value = "s3"
         }
       ]
 
