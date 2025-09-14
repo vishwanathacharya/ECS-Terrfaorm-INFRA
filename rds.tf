@@ -18,7 +18,7 @@ resource "random_password" "db_password" {
 resource "aws_secretsmanager_secret" "db_credentials" {
   name                    = "${local.name_prefix}-db-credentials"
   description             = "Database credentials for ${local.name_prefix}"
-  recovery_window_in_days = 0  # Force immediate deletion to avoid conflicts
+  recovery_window_in_days = 0 # Force immediate deletion to avoid conflicts
 
   tags = local.common_tags
 }
@@ -45,10 +45,10 @@ resource "aws_rds_cluster" "main" {
   master_password         = random_password.db_password.result
   backup_retention_period = var.environment == "production" ? 7 : 1
   preferred_backup_window = "07:00-09:00"
-  
+
   vpc_security_group_ids = [aws_security_group.rds.id]
   db_subnet_group_name   = aws_db_subnet_group.main.name
-  
+
   skip_final_snapshot = var.environment != "production"
   deletion_protection = var.environment == "production"
 
