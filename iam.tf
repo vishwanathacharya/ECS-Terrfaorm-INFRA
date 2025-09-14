@@ -70,11 +70,11 @@ resource "aws_iam_policy" "s3_media_policy" {
   tags = local.common_tags
 }
 
-# Attach S3 policy to ECS task role
-resource "aws_iam_role_policy_attachment" "ecs_task_s3_policy" {
-  role       = aws_iam_role.ecs_task_role.name
-  policy_arn = aws_iam_policy.s3_media_policy.arn
-}
+# Temporarily disabled S3 policy for testing
+# resource "aws_iam_role_policy_attachment" "ecs_task_s3_policy" {
+#   role       = aws_iam_role.ecs_task_role.name
+#   policy_arn = aws_iam_policy.s3_media_policy.arn
+# }
 
 # Secrets Manager Policy for ECS Task
 resource "aws_iam_policy" "secrets_manager_policy" {
