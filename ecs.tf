@@ -126,13 +126,9 @@ resource "aws_ecs_service" "app" {
   launch_type     = "FARGATE"
 
   # Enable automatic deployments
-  deployment_configuration {
-    maximum_percent         = 200
-    minimum_healthy_percent = 50
-  }
-
-  # Force new deployment on every apply
-  force_new_deployment = true
+  deployment_maximum_percent         = 200
+  deployment_minimum_healthy_percent = 50
+  force_new_deployment              = true
 
   network_configuration {
     security_groups  = [aws_security_group.ecs.id]
