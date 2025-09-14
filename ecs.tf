@@ -1,3 +1,9 @@
+# Data source to get latest ECR image
+data "aws_ecr_image" "latest" {
+  repository_name = "bagisto-app"
+  image_tag       = "latest"
+}
+
 # ECS Cluster
 resource "aws_ecs_cluster" "main" {
   name = "${local.name_prefix}-cluster"
@@ -61,23 +67,6 @@ resource "aws_ecs_task_definition" "app" {
           name  = "APP_URL"
           value = "http://${aws_lb.main.dns_name}"
         }
-        # Temporarily disabled S3 and CloudFront for testing
-        # {
-        #   name  = "AWS_BUCKET"
-        #   value = aws_s3_bucket.media_files.bucket
-        # },
-        # {
-        #   name  = "AWS_DEFAULT_REGION"
-        #   value = "ap-southeast-2"
-        # },
-        # {
-        #   name  = "CLOUDFRONT_URL"
-        #   value = "https://${aws_cloudfront_distribution.media_files.domain_name}"
-        # },
-        # {
-        #   name  = "FILESYSTEM_DISK"
-        #   value = "s3"
-        # }
       ]
 
       secrets = [
@@ -112,6 +101,11 @@ resource "aws_ecs_task_definition" "app" {
     }
   ])
 
+  # Force new task definition on every apply
+  lifecycle {
+    create_before_destroy = true
+  }
+
   tags = merge(local.common_tags, {
     Name = "${local.name_prefix}-task"
   })
@@ -121,7 +115,7 @@ resource "aws_ecs_task_definition" "app" {
 resource "aws_ecs_service" "app" {
   name            = "${local.name_prefix}-service"
   cluster         = aws_ecs_cluster.main.id
-  task_definition = aws_ecs_task_definition.app.arn
+  task_definition = "${aws_ecs_task_definition.app.family}:${max(aws_ecs_task_definition.app.revision, data.aws_ecs_task_definition.app.revision)}"
   desired_count   = var.ecs_desired_count
   launch_type     = "FARGATE"
 
@@ -147,6 +141,12 @@ resource "aws_ecs_service" "app" {
   tags = merge(local.common_tags, {
     Name = "${local.name_prefix}-service"
   })
+}
+
+# Data source to get current task definition
+data "aws_ecs_task_definition" "app" {
+  task_definition = aws_ecs_task_definition.app.family
+  depends_on      = [aws_ecs_task_definition.app]
 }
 
 # CloudWatch Log Group
