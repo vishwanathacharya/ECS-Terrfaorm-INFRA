@@ -13,4 +13,4 @@ ecs_capacity_provider = "FARGATE_SPOT"
 ecs_desired_count = 1
 
 # RDS Configuration
-db_instance_class = "db.t3.small"
+db_instance_class = "db.r5.large"
