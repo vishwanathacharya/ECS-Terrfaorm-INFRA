@@ -125,6 +125,15 @@ resource "aws_ecs_service" "app" {
   desired_count   = var.ecs_desired_count
   launch_type     = "FARGATE"
 
+  # Enable automatic deployments
+  deployment_configuration {
+    maximum_percent         = 200
+    minimum_healthy_percent = 50
+  }
+
+  # Force new deployment on every apply
+  force_new_deployment = true
+
   network_configuration {
     security_groups  = [aws_security_group.ecs.id]
     subnets          = aws_subnet.private[*].id
