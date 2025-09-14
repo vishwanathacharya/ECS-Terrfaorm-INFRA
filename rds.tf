@@ -16,8 +16,9 @@ resource "random_password" "db_password" {
 
 # Secrets Manager for RDS credentials
 resource "aws_secretsmanager_secret" "db_credentials" {
-  name        = "${local.name_prefix}-db-credentials"
-  description = "Database credentials for ${local.name_prefix}"
+  name                    = "${local.name_prefix}-db-credentials"
+  description             = "Database credentials for ${local.name_prefix}"
+  recovery_window_in_days = 0  # Force immediate deletion to avoid conflicts
 
   tags = local.common_tags
 }
