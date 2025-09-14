@@ -4,8 +4,8 @@ project_name = "bagisto"
 # VPC Configuration
 vpc_cidr = "10.0.0.0/16"
 
-# ECR Configuration - Update this with your actual ECR repository URL
-ecr_repository_url = "ACCOUNT_ID.dkr.ecr.ap-southeast-2.amazonaws.com/bagisto-app"
+# ECR Configuration
+ecr_repository_url = "556612399991.dkr.ecr.ap-southeast-2.amazonaws.com/bagisto-app"
 image_tag = "latest"
 
 # ECS Configuration
