@@ -1,0 +1,49 @@
+name: Deploy Staging Environment
+
+on:
+  push:
+    branches: [ staging ]
+
+env:
+  AWS_REGION: ap-southeast-2
+  ENVIRONMENT: staging
+
+jobs:
+  deploy:
+    name: Deploy Infrastructure
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v2
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ env.AWS_REGION }}
+
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v2
+      with:
+        terraform_version: 1.5.0
+
+    - name: Terraform Init
+      run: |
+        cp environments/${{ env.ENVIRONMENT }}/backend.tf .
+        terraform init
+
+    - name: Terraform Plan
+      run: |
+        terraform plan -var-file="environments/${{ env.ENVIRONMENT }}/terraform.tfvars"
+
+    - name: Terraform Apply
+      run: |
+        terraform apply -auto-approve -var-file="environments/${{ env.ENVIRONMENT }}/terraform.tfvars"
+
+    - name: Update ECS Service
+      run: |
+        CLUSTER_NAME=$(terraform output -raw ecs_cluster_name)
+        SERVICE_NAME=$(terraform output -raw ecs_service_name)
+        aws ecs update-service --cluster $CLUSTER_NAME --service $SERVICE_NAME --force-new-deployment
