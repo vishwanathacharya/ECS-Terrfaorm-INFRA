@@ -22,6 +22,14 @@ resource "aws_ecs_task_definition" "queue_worker" {
           value = var.environment
         },
         {
+          name  = "APP_KEY"
+          value = "base64:YourBase64EncodedKeyHere1234567890ABCDEF="
+        },
+        {
+          name  = "APP_DEBUG"
+          value = var.environment == "production" ? "false" : "true"
+        },
+        {
           name  = "QUEUE_CONNECTION"
           value = "database"
         }

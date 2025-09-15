@@ -58,6 +58,14 @@ resource "aws_ecs_task_definition" "app" {
           value = var.environment
         },
         {
+          name  = "APP_KEY"
+          value = "base64:YourBase64EncodedKeyHere1234567890ABCDEF="
+        },
+        {
+          name  = "APP_DEBUG"
+          value = var.environment == "production" ? "false" : "true"
+        },
+        {
           name  = "APP_URL"
           value = "http://${aws_lb.main.dns_name}"
         },
