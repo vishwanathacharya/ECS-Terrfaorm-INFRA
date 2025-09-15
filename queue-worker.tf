@@ -69,7 +69,7 @@ resource "aws_ecs_service" "queue_worker" {
   name            = "${local.name_prefix}-queue-worker"
   cluster         = aws_ecs_cluster.main.id
   task_definition = aws_ecs_task_definition.queue_worker.arn
-  desired_count   = 2  # 2 queue workers
+  desired_count   = var.environment == "production" ? 2 : 1  # 2 for prod, 1 for dev/staging
   
   # Use capacity provider strategy instead of launch_type
   capacity_provider_strategy {
