@@ -39,7 +39,7 @@ resource "aws_secretsmanager_secret_version" "db_credentials" {
 resource "aws_rds_cluster" "main" {
   cluster_identifier      = "${local.name_prefix}-aurora-cluster"
   engine                  = "aurora-mysql"
-  engine_version          = "8.0.mysql_aurora.3.07.0"
+  engine_version          = "8.0.mysql_aurora.3.08.2"
   database_name           = "bagisto"
   master_username         = "admin"
   master_password         = random_password.db_password.result

@@ -66,6 +66,11 @@ resource "aws_s3_bucket_lifecycle_configuration" "media_files" {
   rule {
     id     = "media_lifecycle"
     status = "Enabled"
+    
+    # Add required filter
+    filter {
+      prefix = ""
+    }
 
     transition {
       days          = 30
