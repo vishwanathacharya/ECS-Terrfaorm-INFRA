@@ -329,6 +329,26 @@ aws rds modify-db-cluster --db-cluster-identifier bagisto-prod \
   --scaling-configuration MinCapacity=2,MaxCapacity=16
 ```
 
+## 🔄 Rollback & Recovery
+
+### Quick Rollback
+If a deployment causes issues, you can quickly rollback:
+
+**Fastest Method (2 minutes):**
+1. **ECS Console** → **Services** → **Update Service**
+2. **Task Definition** → Select previous revision
+3. **Force new deployment** → Update
+
+**See [ROLLBACK.md](./ROLLBACK.md) for complete rollback guide with all methods.**
+
+### Available Rollback Methods
+- ⚡ **AWS Console** - 2 minutes (recommended for emergencies)
+- 🖥️ **AWS CLI** - 1 minute (if CLI configured)
+- 🏗️ **Terraform** - 5 minutes (infrastructure level)
+- 📝 **Git Revert** - 10 minutes (code level)
+
+---
+
 ## 🔧 Troubleshooting
 
 ### **Common Issues**
