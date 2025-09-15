@@ -127,7 +127,13 @@ resource "aws_ecs_service" "app" {
   cluster         = aws_ecs_cluster.main.id
   task_definition = aws_ecs_task_definition.app.arn
   desired_count   = var.ecs_desired_count
-  launch_type     = "FARGATE"
+  
+  # Use capacity provider strategy instead of launch_type
+  capacity_provider_strategy {
+    capacity_provider = var.ecs_capacity_provider
+    weight           = 100
+    base             = 1
+  }
 
   # Enable rolling deployments
   deployment_maximum_percent         = 200

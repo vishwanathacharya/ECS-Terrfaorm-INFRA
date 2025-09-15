@@ -70,7 +70,13 @@ resource "aws_ecs_service" "scheduler" {
   cluster         = aws_ecs_cluster.main.id
   task_definition = aws_ecs_task_definition.scheduler.arn
   desired_count   = 1  # Only 1 scheduler needed
-  launch_type     = "FARGATE"
+  
+  # Use capacity provider strategy instead of launch_type
+  capacity_provider_strategy {
+    capacity_provider = var.ecs_capacity_provider
+    weight           = 100
+    base             = 1
+  }
 
   network_configuration {
     security_groups  = [aws_security_group.ecs.id]

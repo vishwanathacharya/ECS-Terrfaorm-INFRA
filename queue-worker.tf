@@ -70,7 +70,13 @@ resource "aws_ecs_service" "queue_worker" {
   cluster         = aws_ecs_cluster.main.id
   task_definition = aws_ecs_task_definition.queue_worker.arn
   desired_count   = 2  # 2 queue workers
-  launch_type     = "FARGATE"
+  
+  # Use capacity provider strategy instead of launch_type
+  capacity_provider_strategy {
+    capacity_provider = var.ecs_capacity_provider
+    weight           = 100
+    base             = 1
+  }
 
   network_configuration {
     security_groups  = [aws_security_group.ecs.id]
